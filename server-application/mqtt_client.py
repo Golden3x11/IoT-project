@@ -32,3 +32,7 @@ class Mqtt_Client():
             self.client.publish(f"tickets/response/{client_ip}", f"{time}", qos=QOS)
         else:
             self.client.publish(f"tickets/response/{client_ip}", f"{time}@{msg}", qos=QOS)
+
+    def send_message_to_server(self, time, msg=None):
+        payload = time + msg # tutaj trzeba zobaczyc jak to sie wysyla
+        self.client.publish(f"tickets/request/", payload, QOS)
