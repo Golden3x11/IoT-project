@@ -1,5 +1,5 @@
 import paho.mqtt.client as mqtt
-from config import BROKER_IP, QOS
+from config_pi import BROKER_IP, QOS
 
 
 class Mqtt_Client():
