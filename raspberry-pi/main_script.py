@@ -21,19 +21,24 @@ is_money_transfer = False
 price = 5
 
 disp = SSD1331.SSD1331()
+disp.Init()
 
 
 def greenButtonPressedCallback(channel):
     global is_money_transfer
-    is_money_transfer = True
-    displayLED()
+    if not is_money_transfer:
+        is_money_transfer = True
+        print(f"Green button pressed {is_money_transfer}")
+        displayLED()
 
 
 def redButtonPressedCallback(channel):
     global is_money_transfer, price
-    is_money_transfer = False
-    price = 5
-    displayLED()
+    if is_money_transfer:
+        is_money_transfer = False
+        price = 5
+        print(f"Red button pressed {is_money_transfer}")
+        displayLED()
 
 
 def buzzer_state(state):
@@ -92,49 +97,58 @@ def turn_encoder(channel):
         encoder_left_current_state = GPIO.input(encoderLeft)
         encoder_right_current_state = GPIO.input(encoderRight)
 
-        if (encoderLeftPreviousState == 1 and encoder_left_current_state == 0 and price < 100):
-            price += 5
-        if (encoderRightPreviousState == 1 and encoder_right_current_state == 0 and price > 0):
+        if (encoderLeftPreviousState == 1 and encoder_left_current_state == 0 and price > 0):
             price -= 5
+            displayLED()
+        if (encoderRightPreviousState == 1 and encoder_right_current_state == 0 and price < 100):
+            price += 5
+            displayLED()
 
         encoderLeftPreviousState = encoder_left_current_state
         encoderRightPreviousState = encoder_right_current_state
 
 
 def displayLED():
+    disp.clear()
     fontLarge = ImageFont.truetype('./lib/oled/Font.ttf', 20)
     fontSmall = ImageFont.truetype('./lib/oled/Font.ttf', 13)
 
     image1 = Image.new("RGB", (disp.width, disp.height), "WHITE")
     draw = ImageDraw.Draw(image1)
-
-    if is_money_transfer:
+    global is_money_transfer
+    if not is_money_transfer:
         draw.text((8, 0), "Welcome!!", font=fontSmall, fill="BLACK")
         draw.text((12, 40), "EagleMPK", font=fontSmall, fill="BLACK")
     else:
-        draw.text((8, 0), "Money Transfer", font=fontSmall, fill="BLACK")
+        draw.text((8, 0), "Money", font=fontSmall, fill="BLACK")
+        draw.text((8, 20), "Transfer", font=fontSmall, fill="BLACK")
         draw.text((12, 40), f"{price} $", font=fontSmall, fill="BLACK")
     disp.ShowImage(image1, 0, 0)
 
 
 def send_message_to_broker(d_time, uid, price_current=None):
+    global is_money_transfer
     if is_money_transfer:
         msg = f"T:{price_current}:{uid}"
+        print(msg)
         client.send_message_to_server(d_time, msg)
         global price
         price = 5
     else:
-        client.send_message_to_server(d_time, msg="I/O:" + uid)
+        msg = f"I/O:{uid}"
+        print(msg)
+        client.send_message_to_server(d_time, msg=msg)
 
 
 def start():
     GPIO.add_event_detect(buttonGreen, GPIO.FALLING, callback=greenButtonPressedCallback, bouncetime=200)
     GPIO.add_event_detect(buttonRed, GPIO.FALLING, callback=redButtonPressedCallback, bouncetime=200)
 
-    GPIO.add_event_detect(encoderLeft, GPIO.FALLING, callback=turn_encoder, bouncetime=100)
-    GPIO.add_event_detect(encoderRight, GPIO.FALLING, callback=turn_encoder, bouncetime=100)
+    GPIO.add_event_detect(encoderLeft, GPIO.FALLING, callback=turn_encoder, bouncetime=80)
+    GPIO.add_event_detect(encoderRight, GPIO.FALLING, callback=turn_encoder, bouncetime=80)
 
     client.connect_to_broker_client()
+    displayLED()
     rfidRead()
     client.disconnect_from_broker()
 
