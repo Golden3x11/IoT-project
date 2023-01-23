@@ -21,8 +21,9 @@ def handle_ticket_usage(client_ip_address: str):
         active_ride = active_ride[0] # select first and only result
         time_in = active_ride[2]
         time_out = time_now
+        id = active_ride[0]
         (price, duration) = count_price_and_duration(time_in, time_out)
-        db.update_client_log(client_id, time_out, price, duration)
+        db.update_client_log(id, time_out, price, duration)
         handle_payment(client_ip_address, -price)
     else:
         db.save_client_log(client_id, time_now)

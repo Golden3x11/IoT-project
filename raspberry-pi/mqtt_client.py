@@ -1,5 +1,5 @@
 import paho.mqtt.client as mqtt
-from config import BROKER_IP, QOS
+from config_pi import BROKER_IP, QOS
 
 
 class Mqtt_Client():
@@ -10,7 +10,7 @@ class Mqtt_Client():
         print("Created MQTT Client instance.")
 
     def connect_to_broker(self):
-        self.client.connect(self.broker_ip)
+        self.client.connect(self.broker_ip, port=1833)
         self.client.on_message = self.process_message
         self.client.loop_start()
         self.client.subscribe("tickets/request/")
@@ -40,10 +40,10 @@ class Mqtt_Client():
 
     def send_response_to_client(self, client_ip, time, msg=None):
         if msg is None:
-            self.client.publish(f"tickets/response/{client_ip}", f"{time}", qos=QOS)
+            self.client.publish(f"tickets/response/{client_ip}", f"{time}")
         else:
-            self.client.publish(f"tickets/response/{client_ip}", f"{time}@{msg}", qos=QOS)
+            self.client.publish(f"tickets/response/{client_ip}", f"{time}@{msg}")
 
     def send_message_to_server(self, time, msg=None):
-        payload = msg + time # tutaj trzeba zobaczyc jak to sie wysyla
-        self.client.publish(f"tickets/request/", payload, QOS)
+        payload = f'{msg}:{time}' # tutaj trzeba zobaczyc jak to sie wysyla
+        self.client.publish(f"tickets/request/", payload)

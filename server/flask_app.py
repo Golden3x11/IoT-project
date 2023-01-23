@@ -35,3 +35,6 @@ def clients_page():
     clients = map(client_to_dto, db.get_all_clients())
     print(clients)
     return render_template('clients.html.j2', clients=clients)
+
+if __name__ == "__main__":
+    app.run(debug=True)
